@@ -1,0 +1,25 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "start": "node build/index.js",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:generate": "prisma generate"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "fastify": "^5.2.1",
+    "prisma": "^6.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.8",
+    "@types/pino": "^7.0.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  }
+}
