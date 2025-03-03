@@ -27,6 +27,7 @@ const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
 interface EventData {
+    name: string;
     creator: WebSocket;
     clients: Set<WebSocket>;
     public: boolean;
@@ -41,8 +42,12 @@ wss.on('connection', (ws: WebSocket) => {
         const parsedMessage: Message<CreateEventData | RegisterEventData | SubmitEventData> = JSON.parse(message);
         switch (parsedMessage.type) {
             case 'create':
-                console.log('create', parsedMessage.data);
+                if (EVENTS[parsedMessage.data.id]) {
+                    ws.send(JSON.stringify({ success: false, message: `Event ${(parsedMessage.data as CreateEventData).name} already exists, it is either already registered by you or someone else` }));
+                    return;
+                }
                 EVENTS[parsedMessage.data.id] = {
+                    name: (parsedMessage.data as CreateEventData).name,
                     creator: ws,
                     clients: new Set(),
                     public: (parsedMessage.data as CreateEventData).public || false
@@ -50,12 +55,14 @@ wss.on('connection', (ws: WebSocket) => {
                 ws.send(JSON.stringify({ success: true, message: `Event ${(parsedMessage.data as CreateEventData).name} created` }));
                 break;
             case 'register':
-                console.log('register', parsedMessage.data);
+                if (!EVENTS[parsedMessage.data.id]) {
+                    ws.send(JSON.stringify({ success: false, message: `Event ${(parsedMessage.data as RegisterEventData).id} not found` }));
+                    return;
+                }
                 EVENTS[parsedMessage.data.id].clients.add(ws);
                 ws.send(JSON.stringify({ success: true, message: `Registered to event ${(parsedMessage.data as RegisterEventData).id}` }));
                 break;
             case 'submit':
-                console.log('submit', parsedMessage.data);
                 const event = EVENTS[parsedMessage.data.id];
                 if (event.creator === ws || event.public) {
                     event.clients.forEach((client) => {
@@ -85,6 +92,16 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     res.status(500).send({ error: 'Internal Server Error' });
 });
 
+app.get('/events', (req: Request, res: Response) => {
+    const events = Object.keys(EVENTS).map((id) => ({
+        id,
+        name: EVENTS[id].name,
+        public: EVENTS[id].public,
+        clients: EVENTS[id].clients.size
+    }));
+    res.json(events);
+});
+
 const start = async () => {
     try {
         server.listen(3001, () => {
@@ -101,7 +118,7 @@ start();
 
 
 /*
-Events:
+Events examples:
 
 {
     "type": "create",
