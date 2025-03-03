@@ -7,14 +7,16 @@
     "dev": "ts-node src/index.ts",
     "start": "node build/index.js",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "start:ws": "node build/ws-server.js"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@fastify/websocket": "^11.0.2",
     "fastify": "^5.2.1",
-    "prisma": "^6.4.1"
+    "prisma": "^6.4.1",
   },
   "devDependencies": {
     "@types/node": "^22.13.8",
