@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { createServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
+import path from 'path';
 
 interface CreateEventData {
     id: string;
@@ -90,6 +91,16 @@ wss.on('connection', (ws: WebSocket) => {
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     console.error('Request error:', err);
     res.status(500).send({ error: 'Internal Server Error' });
+});
+
+
+app.get("/", (req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get("/assets/:filename", (req: Request, res: Response) => {
+    const { filename } = req.params;
+    res.sendFile(path.join(__dirname, 'assets', filename));
 });
 
 app.get('/events', (req: Request, res: Response) => {
