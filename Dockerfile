@@ -4,7 +4,15 @@ WORKDIR /app
 
 COPY . .
 
-COPY frontend/dist backend/src
+WORKDIR /app/frontend
+
+RUN npm install
+
+RUN npm run build && mkdir -p dist
+
+WORKDIR /app
+
+RUN cp -r frontend/dist backend/public
 
 WORKDIR /app/backend
 
