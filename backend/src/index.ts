@@ -40,7 +40,7 @@ wss.on('connection', (ws: WebSocket) => {
     console.log('New WebSocket connection');
 
     ws.on('message', (message: string) => {
-        const parsedMessage: Message<CreateEventData | RegisterEventData | SubmitEventData> = JSON.parse(message);
+        const parsedMessage: Message<CreateEventData | RegisterEventData | SubmitEventData> = JSON.parse(message.toString());
         switch (parsedMessage.type) {
             case 'create':
                 if (EVENTS[parsedMessage.data.id]) {
