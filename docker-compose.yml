@@ -2,7 +2,7 @@ services:
   core:
     image: cellules/core:latest
     ports:
-      - "3002:3001"
+      - "3000:3000"
     depends_on:
       - db
     environment:

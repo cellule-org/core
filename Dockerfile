@@ -8,6 +8,6 @@ COPY frontend/dist backend/src
 
 WORKDIR /app/backend
 
-EXPOSE 3001
+EXPOSE 3000
 
 CMD ["npm", "run", "dev"]
