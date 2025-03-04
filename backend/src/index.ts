@@ -115,9 +115,9 @@ app.get('/events', (req: Request, res: Response) => {
 
 const start = async () => {
     try {
-        server.listen(3001, () => {
-            console.log('Server is running on http://localhost:3001');
-            console.log('WebSocket is running on ws://localhost:3001');
+        server.listen(3000, () => {
+            console.log('Server is running on http://localhost:3000');
+            console.log('WebSocket is running on ws://localhost:3000');
         });
     } catch (err) {
         console.error(err);
