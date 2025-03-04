@@ -95,12 +95,12 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 
 
 app.get("/", (req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 app.get("/assets/:filename", (req: Request, res: Response) => {
     const { filename } = req.params;
-    res.sendFile(path.join(__dirname, 'assets', filename));
+    res.sendFile(path.join(__dirname, 'dist', 'assets', filename));
 });
 
 app.get('/events', (req: Request, res: Response) => {

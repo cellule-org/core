@@ -12,7 +12,7 @@ RUN npm run build && mkdir -p dist
 
 WORKDIR /app
 
-RUN cp -r frontend/dist backend/public
+RUN cp -r frontend/dist backend/src
 
 WORKDIR /app/backend
 
