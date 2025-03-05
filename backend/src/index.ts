@@ -44,7 +44,7 @@ wss.on('connection', (ws: WebSocket) => {
         switch (parsedMessage.type) {
             case 'create':
                 if (EVENTS[parsedMessage.data.id]) {
-                    ws.send(JSON.stringify({ success: false, message: `Event ${(parsedMessage.data as CreateEventData).name} already exists, it is either already registered by you or someone else` }));
+                    ws.send(JSON.stringify({ type: "message", success: false, message: `Event ${(parsedMessage.data as CreateEventData).name} already exists, it is either already registered by you or someone else` }));
                     return;
                 }
                 EVENTS[parsedMessage.data.id] = {
@@ -53,15 +53,15 @@ wss.on('connection', (ws: WebSocket) => {
                     clients: new Set(),
                     public: (parsedMessage.data as CreateEventData).public || false
                 };
-                ws.send(JSON.stringify({ success: true, message: `Event ${(parsedMessage.data as CreateEventData).name} created` }));
+                ws.send(JSON.stringify({ type: "message", success: true, message: `Event ${(parsedMessage.data as CreateEventData).name} created` }));
                 break;
             case 'register':
                 if (!EVENTS[parsedMessage.data.id]) {
-                    ws.send(JSON.stringify({ success: false, message: `Event ${(parsedMessage.data as RegisterEventData).id} not found` }));
+                    ws.send(JSON.stringify({ type: "message", success: false, message: `Event ${(parsedMessage.data as RegisterEventData).id} not found` }));
                     return;
                 }
                 EVENTS[parsedMessage.data.id].clients.add(ws);
-                ws.send(JSON.stringify({ success: true, message: `Registered to event ${(parsedMessage.data as RegisterEventData).id}` }));
+                ws.send(JSON.stringify({ type: "message", success: true, message: `Registered to event ${(parsedMessage.data as RegisterEventData).id}` }));
                 break;
             case 'submit':
                 const event = EVENTS[parsedMessage.data.id];
@@ -71,7 +71,7 @@ wss.on('connection', (ws: WebSocket) => {
                         client.send(JSON.stringify({ id: submitData.id, data: submitData.data }));
                     });
                 } else {
-                    ws.send(JSON.stringify({ success: false, message: 'You are not authorized to submit to this event' }));
+                    ws.send(JSON.stringify({ type: "message", success: false, message: 'You are not authorized to submit to this event' }));
                 }
                 break;
         }
