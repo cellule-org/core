@@ -67,7 +67,7 @@ export default function UserAccounts() {
   }
 
   return (
-    <section className="flex flex-row items-center justify-between min-h-screen p-4">
+    <section className="flex flex-row items-center justify-evenly min-h-screen p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-center">User Accounts</CardTitle>
