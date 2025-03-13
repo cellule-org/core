@@ -15,15 +15,20 @@
   "description": "",
   "dependencies": {
     "@fastify/websocket": "^11.0.2",
+    "@prisma/client": "^6.5.0",
+    "bcrypt": "^5.1.1",
     "express": "^4.21.2",
-    "prisma": "^6.4.1",
+    "jsonwebtoken": "^9.0.2",
     "ws": "^8.18.1"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
     "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.13.8",
     "@types/pino": "^7.0.4",
     "@types/ws": "^8.5.14",
+    "prisma": "^6.5.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
   }
