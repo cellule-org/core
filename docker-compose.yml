@@ -8,6 +8,7 @@ services:
       - db
     environment:
       DATABASE_URL: postgres://postgres:password@core-db:5432/coredb
+      SECRET: secret_key_for_password_and_jwt
     networks:
       - cellule
 
