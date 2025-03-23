@@ -7,12 +7,13 @@ COPY . .
 WORKDIR /app/frontend
 
 RUN npm install
-
 RUN npm run build && mkdir -p dist
 
 WORKDIR /app
 
 RUN cp -r frontend/dist backend/src
+
+RUN rm -rf frontend
 
 WORKDIR /app/backend
 
