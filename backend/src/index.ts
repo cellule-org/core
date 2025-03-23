@@ -85,8 +85,15 @@ interface EventData {
 
 const EVENTS: { [key: string]: EventData } = {};
 
-wss.on('connection', (ws: WebSocket) => {
+wss.on('connection', async (ws: WebSocket) => {
     console.log('New WebSocket connection');
+
+    ws.send(JSON.stringify({
+        type: "core_users", users: (await prisma.user.findMany()).map((user) => {
+            const { password, ...userWithoutPassword } = user;
+            return userWithoutPassword;
+        })
+    }));
 
     ws.on('message', (message: string) => {
         const parsedMessage: Message<CreateEventData | RegisterEventData | SubmitEventData | RegisterUserData> = JSON.parse(message.toString());
@@ -147,11 +154,6 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction): void => {
     res.status(500).send({ error: 'Internal Server Error' });
 });
 
-
-app.get("/", (req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-});
-
 app.get("/assets/:filename", (req: Request, res: Response) => {
     const { filename } = req.params;
     res.sendFile(path.join(__dirname, 'dist', 'assets', filename));
@@ -194,7 +196,11 @@ app.post('/api/auth/login', async (req: Request, res: Response): Promise<any> =>
     }
     const accessToken = jwt.sign({ id: user.id, username: user.username }, generateUniqueString(), { expiresIn: '15m' });
     const refreshToken = jwt.sign({ id: user.id, username: user.username }, generateUniqueString(), { expiresIn: '7d' });
-    return res.json({ type: "success_login", username: user.username, tokens: { accessToken, refreshToken } });
+    //accessExpiry is the epoch time in milliseconds when the access token expires
+    const accessExpiry = Date.now() + 15 * 60 * 1000;
+    //refreshExpiry is the epoch time in milliseconds when the refresh token expires
+    const refreshExpiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    return res.json({ type: "success_login", username: user.username, user_id: user.id, tokens: { accessToken, refreshToken }, expiry: { accessExpiry, refreshExpiry } });
 });
 
 app.get('/api/auth/accounts', async (req: Request, res: Response): Promise<any> => {
@@ -204,6 +210,10 @@ app.get('/api/auth/accounts', async (req: Request, res: Response): Promise<any> 
         }
     });
     return res.json(users);
+});
+
+app.get('*', (req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 const start = async () => {
