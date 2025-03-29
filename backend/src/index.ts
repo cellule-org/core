@@ -11,6 +11,12 @@ import os from 'os';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 
+enum CoreEvents {
+    USER_REGISTERED = 'core_user_registered',
+    USER_DELETED = 'core_user_deleted',
+    USER_LOGIN = 'core_user_login'
+}
+
 function getLocalIP(): string {
     const networkInterfaces = os.networkInterfaces();
     for (const interfaceName in networkInterfaces) {
@@ -71,19 +77,62 @@ interface Message<T> {
 }
 
 const app = express();
+
 app.use(express.json());
 app.use(bodyParser.json());
+
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
 interface EventData {
     name: string;
-    creator: WebSocket;
+    creator: WebSocket | null;
     clients: Set<WebSocket>;
     public: boolean;
 }
 
-const EVENTS: { [key: string]: EventData } = {};
+class EventManager {
+    private events: { [key: string]: EventData } = {};
+
+    createEvent(id: string, name: string, ws: WebSocket | null, publicEvent: boolean): void {
+        this.events[id] = {
+            name,
+            creator: ws,
+            clients: new Set(),
+            public: publicEvent
+        };
+    }
+
+    registerEvent(id: string, ws: WebSocket): void {
+        this.events[id].clients.add(ws);
+    }
+
+    submitEvent(id: string, data: any): void {
+        const event = this.events[id];
+        event.clients.forEach((client) => {
+            client.send(JSON.stringify({ id, data }));
+        });
+    }
+
+    exist(id: string): boolean {
+        return !!this.events[id];
+    }
+
+    get(id: string): EventData {
+        return this.events[id];
+    }
+
+    getAll(): { id: string, name: string, public: boolean, clients: number }[] {
+        return Object.keys(this.events).map((id) => ({
+            id,
+            name: this.events[id].name,
+            public: this.events[id].public,
+            clients: this.events[id].clients.size
+        }));
+    }
+}
+
+const events = new EventManager();
 
 wss.on('connection', async (ws: WebSocket) => {
     console.log('New WebSocket connection');
@@ -101,35 +150,27 @@ wss.on('connection', async (ws: WebSocket) => {
         switch (parsedMessage.type) {
             case 'create':
                 event_id = (parsedMessage.data as CreateEventData).id;
-                if (EVENTS[event_id]) {
-                    ws.send(JSON.stringify({ type: "message", success: false, message: `Event ${(parsedMessage.data as CreateEventData).name} already exists, it is either already registered by you or someone else` }));
-                    return;
-                }
-                EVENTS[event_id] = {
-                    name: (parsedMessage.data as CreateEventData).name,
-                    creator: ws,
-                    clients: new Set(),
-                    public: (parsedMessage.data as CreateEventData).public || false
-                };
+                events.createEvent(event_id, (parsedMessage.data as CreateEventData).name, ws, (parsedMessage.data as CreateEventData).public || false);
                 ws.send(JSON.stringify({ type: "message", success: true, message: `Event ${(parsedMessage.data as CreateEventData).name} created` }));
                 break;
             case 'register':
                 event_id = (parsedMessage.data as RegisterEventData).id;
-                if (!EVENTS[event_id]) {
+                if (!events.exist(event_id)) {
                     ws.send(JSON.stringify({ type: "message", success: false, message: `Event ${(parsedMessage.data as RegisterEventData).id} not found` }));
                     return;
                 }
-                EVENTS[event_id].clients.add(ws);
+                events.registerEvent(event_id, ws);
                 ws.send(JSON.stringify({ type: "message", success: true, message: `Registered to event ${(parsedMessage.data as RegisterEventData).id}` }));
                 break;
             case 'submit':
                 event_id = (parsedMessage.data as SubmitEventData).id;
-                const event = EVENTS[event_id];
-                if (event.creator === ws || event.public) {
-                    event.clients.forEach((client) => {
-                        const submitData = parsedMessage.data as SubmitEventData;
-                        client.send(JSON.stringify({ id: submitData.id, data: submitData.data }));
-                    });
+                if (!events.exist(event_id)) {
+                    ws.send(JSON.stringify({ type: "message", success: false, message: `Event ${(parsedMessage.data as SubmitEventData).id} not found` }));
+                    return;
+                }
+                const event = events.get(event_id);
+                if (event.creator === ws || event.public || event.creator === null) {
+                    events.submitEvent(event_id, (parsedMessage.data as SubmitEventData).data);
                 } else {
                     ws.send(JSON.stringify({ type: "message", success: false, message: 'You are not authorized to submit to this event' }));
                 }
@@ -160,13 +201,14 @@ app.get("/assets/:filename", (req: Request, res: Response) => {
 });
 
 app.get('/events', (req: Request, res: Response) => {
+    /*
     const events = Object.keys(EVENTS).map((id) => ({
         id,
         name: EVENTS[id].name,
         public: EVENTS[id].public,
         clients: EVENTS[id].clients.size
-    }));
-    res.json(events);
+    }));*/
+    res.json(events.getAll());
 });
 
 app.post('/api/auth/register', async (req: Request, res: Response): Promise<any> => {
@@ -218,6 +260,12 @@ app.get('*', (req: Request, res: Response) => {
 
 const start = async () => {
     try {
+
+        events.createEvent(CoreEvents.USER_REGISTERED, 'User Registered', null, true);
+        events.createEvent(CoreEvents.USER_DELETED, 'User Deleted', null, true);
+        events.createEvent(CoreEvents.USER_LOGIN, 'User Login', null, true);
+
+        console.log('Default system events created');
         server.listen(3000, () => {
             console.log('Server is running on http://localhost:3000');
             console.log('WebSocket is running on ws://localhost:3000');
